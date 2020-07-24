@@ -1,14 +1,14 @@
-const express = require('express')
-const app = express()
+const express = require("express");
+const app = express();
 
-app.set('port', process.env.PORT || 3000)
+app.set("port", process.env.PORT || 3000);
 
-app.get('/', (req, res) => res.send('Hello World!'))
+app.get("/", (req, res) => res.send("Hello World!"));
 
-app.listen(app.get('port'), function(error) {
+app.listen(app.get("port"), function (error) {
   if (error) {
-    console.error(error)
+    console.error(error);
   } else {
-    console.info(`Listening on port ${app.get('port')}`)
+    console.info(`Listening on port ${app.get("port")}`);
   }
-})
+});
