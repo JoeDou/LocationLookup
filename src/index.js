@@ -1,23 +1,26 @@
 import express from "express";
 import "dotenv/config";
 import MapServices from "./map-services";
-
-const SAP = "525 W Santa Clara St, San Jose, CA";
+import AddressHandler from "./addressHandler";
+import { validationRules, validate } from "./validator";
 
 const app = express();
 app.use(express.json());
 
-app.set("port", process.env.PORT || 3000);
+app.set("port", process.env.PORT || 3001);
 
-app.get("/", async (req, res) => {
-  try {
-    const data = await MapServices.addressLookup(SAP);
-    console.log(data.data.results[0]);
-    res.json(data.data.results[0]);
-  } catch (err) {
-    console.log(e);
-    res.send("error", e);
-  }
+const addressHandler = new AddressHandler(MapServices);
+
+app.post("/address/verify", validationRules, validate, async (req, res) => {
+  console.log(req.body);
+  const SAP = "525 W Santa Clara St, San Jose, California";
+  const data = await addressHandler.addressLookup(SAP);
+  res.json(data);
+});
+
+// 404
+app.use((req, res, next) => {
+  return res.status(404).send({ message: `Route ${req.url} Not found.` });
 });
 
 app.listen(app.get("port"), (error) => {

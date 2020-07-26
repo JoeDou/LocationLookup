@@ -6,14 +6,20 @@ class MapServices {
     this.client = this.client || new Client({});
   }
 
-  addressLookup(address) {
-    return this.client.geocode({
-      params: {
-        address,
-        key: API_KEY,
-      },
-      timeout: 1000, // milliseconds
-    });
+  async request(address) {
+    try {
+      const data = await this.client.geocode({
+        params: {
+          address,
+          key: API_KEY,
+        },
+        timeout: 1000, // milliseconds
+      });
+      return Promise.resolve(data.data.results[0]);
+    } catch (e) {
+      // TODO: error Handling
+      console.log(e);
+    }
   }
 }
 
