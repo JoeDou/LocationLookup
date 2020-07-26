@@ -15,11 +15,11 @@ class MapServices {
         },
         timeout: 1000, // milliseconds
       });
-      return Promise.resolve(data.data.results[0]);
     } catch (e) {
       // TODO: error Handling
       console.log(e);
     }
+    return Promise.resolve(data.data.results[0]);
   }
 }
 
