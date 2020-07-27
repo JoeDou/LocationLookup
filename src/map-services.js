@@ -1,4 +1,5 @@
 import { Client } from "@googlemaps/google-maps-services-js";
+import { addressOrder } from "./constants";
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 class MapServices {
@@ -6,11 +7,16 @@ class MapServices {
     this.client = this.client || new Client({});
   }
 
+  addressLookup(addressObj) {
+    const serializedAddress = this.serialize(addressObj);
+    return this.request(serializedAddress);
+  }
+
   async request(address) {
     try {
       const data = await this.client.geocode({
         params: {
-          address,
+          address: address,
           key: API_KEY,
         },
         timeout: 1000, // milliseconds
@@ -19,7 +25,19 @@ class MapServices {
       // TODO: error Handling
       console.log(e);
     }
-    return Promise.resolve(data.data.results[0]);
+    return Promise.resolve({
+      formatted: data.data.results[0].formatted_address,
+      lat: data.data.results[0].geometry.location.lat,
+      lon: data.data.results[0].geometry.location.lng,
+    });
+  }
+
+  serialize(address) {
+    const list = [];
+    addressOrder.forEach((key) => {
+      output.push(address[key]);
+    });
+    return list.join(", ");
   }
 }
 
