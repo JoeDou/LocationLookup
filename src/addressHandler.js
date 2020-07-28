@@ -20,6 +20,7 @@ export default class AddressHandler {
   // the response
   async verifyAndCreateAll(req, res, next) {
     const addresses = req.body;
+
     const output = await Promise.all(
       addresses.map((address) => {
         return this._verifyAndCreateOne(this._serializeInput(address));
