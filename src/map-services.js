@@ -1,6 +1,6 @@
 import { Client } from "@googlemaps/google-maps-services-js";
 import parser from "parse-address";
-import { combineStreetComponent } from "./utils";
+import { combineStreetComponent, ErrorHandler } from "./utils";
 
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
@@ -24,8 +24,7 @@ class MapServices {
       });
       return Promise.resolve(this._googleMapper(geocodeData));
     } catch (e) {
-      // TODO: error Handling
-      console.log(e);
+      throw new ErrorHandler(503, "Map Service Unavailable");
     }
   }
 

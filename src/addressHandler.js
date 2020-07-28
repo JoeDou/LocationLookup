@@ -4,6 +4,7 @@ import {
   combineStreetComponent,
   combineAddressComponent,
   isMatch,
+  ErrorHandler,
 } from "./utils";
 
 export default class AddressHandler {
@@ -12,14 +13,20 @@ export default class AddressHandler {
     this.verifyAndCreateAll = this.verifyAndCreateAll.bind(this);
   }
 
-  async verifyAndCreateAll(req, res) {
+  async verifyAndCreateAll(req, res, next) {
     const addresses = req.body;
-    const out = await Promise.all(
+    const output = await Promise.all(
       addresses.map((address) => {
         return this._verifyAndCreateOne(this._serializeInput(address));
       })
-    );
-    res.json(out);
+    ).catch((e) => {
+      if (e instanceof ErrorHandler) {
+        next(e);
+      } else {
+        throw new ErrorHandler(500, "Internal Server Error");
+      }
+    });
+    res.json(output);
   }
 
   async _verifyAndCreateOne(input) {
@@ -31,23 +38,28 @@ export default class AddressHandler {
   }
 
   async _dbVerification(input) {
-    const cityStateZip = await CityStateZip.findOne({
-      where: { zip_code: input.zip_code, city: input.city },
-    });
-    if (cityStateZip) {
-      const address = await Address.findOne({
-        where: {
-          cityStateZipId: cityStateZip.id,
-          street: input.street,
-        },
+    try {
+      const cityStateZip = await CityStateZip.findOne({
+        where: { zip_code: input.zip_code, city: input.city },
       });
-      if (address) {
-        const combined = this._combineModelsToObject(address, cityStateZip);
-        if (isMatch(input, combined)) {
-          return Promise.resolve(this._formatOutput(combined));
+      if (cityStateZip) {
+        const address = await Address.findOne({
+          where: {
+            cityStateZipId: cityStateZip.id,
+            street: input.street,
+          },
+        });
+        if (address) {
+          const combined = this._combineModelsToObject(address, cityStateZip);
+          if (isMatch(input, combined)) {
+            return Promise.resolve(this._formatOutput(combined));
+          }
         }
       }
+    } catch (e) {
+      throw new ErrorHandler(503, "DB Service Unavailable");
     }
+
     return Promise.resolve(null);
   }
 
@@ -61,25 +73,27 @@ export default class AddressHandler {
   }
 
   async _createEntries(serviceAddressData) {
-    let cityStateZip = await CityStateZip.findOne({
-      where: {
-        zip_code: serviceAddressData.zip_code,
-        city: serviceAddressData.city,
-      },
-    });
-    if (!cityStateZip) {
-      cityStateZip = await CityStateZip.create({
-        city: serviceAddressData.city,
-        state: serviceAddressData.state,
-        zip_code: serviceAddressData.zip_code,
+    try {
+      let cityStateZip = await CityStateZip.findOne({
+        where: {
+          zip_code: serviceAddressData.zip_code,
+          city: serviceAddressData.city,
+        },
       });
-    }
-    await Address.create({
-      street: serviceAddressData.street,
-      cityStateZipId: cityStateZip.id,
-      lat: serviceAddressData.lat,
-      lon: serviceAddressData.lon,
-    });
+      if (!cityStateZip) {
+        cityStateZip = await CityStateZip.create({
+          city: serviceAddressData.city,
+          state: serviceAddressData.state,
+          zip_code: serviceAddressData.zip_code,
+        });
+      }
+      await Address.create({
+        street: serviceAddressData.street,
+        cityStateZipId: cityStateZip.id,
+        lat: serviceAddressData.lat,
+        lon: serviceAddressData.lon,
+      });
+    } catch (e) {}
   }
 
   _serializeInput(input) {

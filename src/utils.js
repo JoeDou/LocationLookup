@@ -40,3 +40,26 @@ export function isMatch(obj1, obj2) {
         obj2[key].toLowerCase().replace(/[\W_]+/g, " ")
   );
 }
+
+export class ErrorHandler extends Error {
+  constructor(statusCode, message) {
+    super();
+    this.statusCode = statusCode;
+    this.message = message;
+  }
+}
+
+export const handleError = (err, res) => {
+  const { statusCode, message } = err;
+  res.status(statusCode).json({
+    status: "error",
+    statusCode,
+    message,
+  });
+};
+
+export function wrapAsync(fn) {
+  return function (req, res, next) {
+    fn(req, res, next).catch(next);
+  };
+}

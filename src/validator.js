@@ -1,4 +1,5 @@
 import { body, validationResult } from "express-validator";
+import { ErrorHandler } from "./utils";
 
 export const validationRules = [
   body("*.address_line_one").isString().notEmpty(),
@@ -12,8 +13,9 @@ export const validate = (req, res, next) => {
   if (errors.isEmpty()) {
     return next();
   }
-
-  return res.status(400).json({
-    errors,
-  });
+  const msg = {
+    message: "Bad Request",
+    errors: errors.errors,
+  };
+  throw new ErrorHandler(400, msg);
 };

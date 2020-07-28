@@ -3,6 +3,7 @@ import "dotenv/config";
 import MapServices from "./map-services";
 import AddressHandler from "./addressHandler";
 import { validationRules, validate } from "./validator";
+import { ErrorHandler, handleError, wrapAsync } from "./utils";
 
 const app = express();
 app.use(express.json());
@@ -14,12 +15,16 @@ app.post(
   "/address/verify",
   validationRules,
   validate,
-  addressHandler.verifyAndCreateAll
+  wrapAsync(addressHandler.verifyAndCreateAll)
 );
 
 // 404
 app.use((req, res, next) => {
-  return res.status(404).send({ message: `Route ${req.url} Not found.` });
+  throw new ErrorHandler(404, `Route ${req.url} Not found.`);
+});
+
+app.use((err, req, res, next) => {
+  handleError(err, res);
 });
 
 app.listen(app.get("port"), (error) => {
