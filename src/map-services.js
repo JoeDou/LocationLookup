@@ -1,5 +1,7 @@
 import { Client } from "@googlemaps/google-maps-services-js";
-import { addressOrder } from "./constants";
+import parser from "parse-address";
+import { combineStreetComponent } from "./utils";
+
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 class MapServices {
@@ -8,36 +10,37 @@ class MapServices {
   }
 
   addressLookup(addressObj) {
-    const serializedAddress = this.serialize(addressObj);
-    return this.request(serializedAddress);
+    return this._request(addressObj.address);
   }
 
-  async request(address) {
+  async _request(address) {
     try {
-      const data = await this.client.geocode({
+      const geocodeData = await this.client.geocode({
         params: {
           address: address,
           key: API_KEY,
         },
         timeout: 1000, // milliseconds
       });
+      return Promise.resolve(this._googleMapper(geocodeData));
     } catch (e) {
       // TODO: error Handling
       console.log(e);
     }
-    return Promise.resolve({
-      formatted: data.data.results[0].formatted_address,
-      lat: data.data.results[0].geometry.location.lat,
-      lon: data.data.results[0].geometry.location.lng,
-    });
   }
 
-  serialize(address) {
-    const list = [];
-    addressOrder.forEach((key) => {
-      output.push(address[key]);
-    });
-    return list.join(", ");
+  _googleMapper(geocodeData) {
+    const parsedData = parser.parseLocation(
+      geocodeData.data.results[0].formatted_address.toLowerCase()
+    );
+    return {
+      street: combineStreetComponent(parsedData),
+      lat: geocodeData.data.results[0].geometry.location.lat,
+      lon: geocodeData.data.results[0].geometry.location.lng,
+      city: parsedData.city,
+      state: parsedData.state,
+      zip_code: parsedData.zip,
+    };
   }
 }
 

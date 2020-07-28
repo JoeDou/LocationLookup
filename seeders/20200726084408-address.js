@@ -6,7 +6,7 @@ module.exports = {
       "Addresses",
       [
         {
-          formatted: "525 W Santa Clara St",
+          street: "525 w santa clara st",
           cityStateZipId: 1,
           lat: 37.3328955,
           lon: -121.9010841,
@@ -14,7 +14,7 @@ module.exports = {
           updatedAt: new Date(),
         },
         {
-          formatted: "1811 Hillsdale Ave",
+          street: "1811 hillsdale ave",
           cityStateZipId: 2,
           lat: 37.2648887,
           lon: -121.93944,
@@ -22,7 +22,7 @@ module.exports = {
           updatedAt: new Date(),
         },
         {
-          formatted: "1855 Hillsdale Ave",
+          street: "1855 hillsdale ave",
           cityStateZipId: 2,
           lat: 37.2648936,
           lon: -121.9131755,

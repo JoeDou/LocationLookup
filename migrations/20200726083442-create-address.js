@@ -10,13 +10,11 @@ module.exports = {
           primaryKey: true,
           type: Sequelize.INTEGER,
         },
-        formatted: {
+        street: {
           type: Sequelize.STRING,
-          unique: "compositeIndex",
         },
         cityStateZipId: {
           type: Sequelize.INTEGER,
-          unique: "compositeIndex",
         },
         lat: {
           type: Sequelize.FLOAT,
@@ -37,7 +35,7 @@ module.exports = {
         uniqueKeys: {
           unique_tag: {
             customIndex: true,
-            fields: ["formatted", "cityStateZipId"],
+            fields: ["street", "cityStateZipId"],
           },
         },
       }

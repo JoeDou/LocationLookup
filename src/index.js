@@ -3,7 +3,6 @@ import "dotenv/config";
 import MapServices from "./map-services";
 import AddressHandler from "./addressHandler";
 import { validationRules, validate } from "./validator";
-import address from "../models/address";
 
 const app = express();
 app.use(express.json());
@@ -15,7 +14,7 @@ app.post(
   "/address/verify",
   validationRules,
   validate,
-  addressHandler.verifyAll
+  addressHandler.verifyAndCreateAll
 );
 
 // 404

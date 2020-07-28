@@ -6,16 +6,16 @@ module.exports = {
       "CityStateZips",
       [
         {
-          city: "San Jose",
+          city: "san jose",
           state: "CA",
-          zip: "95113",
+          zip_code: "95113",
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
-          city: "San Jose",
+          city: "san jose",
           state: "CA",
-          zip: "95124",
+          zip_code: "95124",
           createdAt: new Date(),
           updatedAt: new Date(),
         },

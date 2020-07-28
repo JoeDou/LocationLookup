@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Address.init(
     {
-      formatted: DataTypes.STRING,
+      street: DataTypes.STRING,
       cityStateZipId: DataTypes.INTEGER,
       lat: DataTypes.FLOAT,
       lon: DataTypes.FLOAT,

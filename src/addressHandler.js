@@ -1,83 +1,118 @@
-import { Address, CityStateZip } from "../models";
 import parser from "parse-address";
-import { parseOrder } from "./constants";
+import { Address, CityStateZip } from "../models";
+import {
+  combineStreetComponent,
+  combineAddressComponent,
+  isMatch,
+} from "./utils";
 
-class AddressHandler {
+export default class AddressHandler {
   constructor(mapService) {
     this.mapService = mapService;
-    this.verifyAll = this.verifyAll.bind(this);
+    this.verifyAndCreateAll = this.verifyAndCreateAll.bind(this);
   }
 
-  async verifyAll(req, res) {
+  async verifyAndCreateAll(req, res) {
     const addresses = req.body;
     const out = await Promise.all(
       addresses.map((address) => {
-        return this.verifyOne(address);
+        return this._verifyAndCreateOne(this._serializeInput(address));
       })
     );
     res.json(out);
   }
 
-  async verifyOne(input) {
-    let cityStateZip = await CityStateZip.findOne({
-      where: { zip: input.zip_code },
+  async _verifyAndCreateOne(input) {
+    let output = await this._dbVerification(input);
+    if (!output) {
+      output = await this._mapSericeVerifyAndCreate(input);
+    }
+    return Promise.resolve(output);
+  }
+
+  async _dbVerification(input) {
+    const cityStateZip = await CityStateZip.findOne({
+      where: { zip_code: input.zip_code, city: input.city },
     });
     if (cityStateZip) {
       const address = await Address.findOne({
         where: {
           cityStateZipId: cityStateZip.id,
-          formatted: this.formatAddress(input.address_line_one),
+          street: input.street,
         },
       });
-      return Promise.resolve(this.formatOutput(address, cityStateZip));
+      if (address) {
+        const combined = this._combineModelsToObject(address, cityStateZip);
+        if (isMatch(input, combined)) {
+          return Promise.resolve(this._formatOutput(combined));
+        }
+      }
     }
-    return this.createEntries(input, cityStateZip);
+    return Promise.resolve(null);
   }
 
-  async createEntries(input, cityStateZip) {
-    const raw = await this.mapService.addressLookup(input);
-    const parsedAddress = parser.parseLocation(raw.formatted);
+  async _mapSericeVerifyAndCreate(input) {
+    const serviceAddressData = await this.mapService.addressLookup(input);
+    if (isMatch(input, serviceAddressData)) {
+      this._createEntries(serviceAddressData);
+      return Promise.resolve(this._formatOutput(serviceAddressData));
+    }
+    return Promise.resolve(null);
+  }
+
+  async _createEntries(serviceAddressData) {
+    let cityStateZip = await CityStateZip.findOne({
+      where: {
+        zip_code: serviceAddressData.zip_code,
+        city: serviceAddressData.city,
+      },
+    });
     if (!cityStateZip) {
       cityStateZip = await CityStateZip.create({
-        city: parsedAddress.city,
-        state: parsedAddress.state,
-        zip: parsedAddress.zip,
+        city: serviceAddressData.city,
+        state: serviceAddressData.state,
+        zip_code: serviceAddressData.zip_code,
       });
     }
-    const address = create({
-      formatted: this.combineParsed(parsedAddress),
+    await Address.create({
+      street: serviceAddressData.street,
       cityStateZipId: cityStateZip.id,
-      lat: raw.lat,
-      lon: raw.lon,
+      lat: serviceAddressData.lat,
+      lon: serviceAddressData.lon,
     });
-    return Promise.resolve(formatOutput(address, cityStateZip));
   }
 
-  formatAddress(address) {
-    const parsed = parser.parseLocation(address);
-    return this.combineParsed(parsed);
-  }
-
-  combineParsed(parsed) {
-    const parts = [];
-    parseOrder.forEach((key) => {
-      if (parsed[key]) {
-        parts.push(parsed[key]);
-      }
-    });
-    return parts.join(" ");
-  }
-
-  formatOutput(address, cityStateZip) {
+  _serializeInput(input) {
+    const combinedAddress = combineAddressComponent(input);
+    const parsedData = parser.parseLocation(combinedAddress);
     return {
-      address_line_one: address.formatted,
+      address: combinedAddress,
+      street: combineStreetComponent(parsedData),
+      city: parsedData.city,
+      state: parsedData.state,
+      zip_code: parsedData.zip,
+    };
+  }
+
+  _combineModelsToObject(address, cityStateZip) {
+    return {
+      street: address.street,
       city: cityStateZip.city,
       state: cityStateZip.state,
-      zip_code: cityStateZip.zip,
-      latitude: address.lat,
-      longitude: address.lon,
+      zip_code: cityStateZip.zip_code,
+      lat: address.lat,
+      lon: address.lon,
+    };
+  }
+
+  _formatOutput(addressData) {
+    return {
+      address_line_one: addressData.street,
+      city: addressData.city,
+      state: addressData.state,
+      zip_code: addressData.zip_code,
+      latitude: addressData.lat,
+      longitude: addressData.lon,
     };
   }
 }
-
-export default AddressHandler;
