@@ -28,6 +28,8 @@
     "@babel/core": "^7.10.5",
     "@babel/node": "^7.10.5",
     "@babel/preset-env": "^7.10.4",
+    "babel-jest": "^26.1.0",
+    "babel-polyfill": "^6.26.0",
     "eslint": "^7.5.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-import": "^2.22.0",
@@ -37,7 +39,8 @@
     "jest": "^26.1.0",
     "nodemon": "^2.0.4",
     "prettier-eslint": "^11.0.0",
-    "sequelize-cli": "^6.2.0"
+    "sequelize-cli": "^6.2.0",
+    "sequelize-test-helpers": "^1.2.3"
   },
   "engines": {
     "node": "12.16"

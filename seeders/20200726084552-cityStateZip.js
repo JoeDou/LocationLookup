@@ -7,14 +7,14 @@ module.exports = {
       [
         {
           city: "san jose",
-          state: "CA",
+          state: "ca",
           zip_code: "95113",
           createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
           city: "san jose",
-          state: "CA",
+          state: "ca",
           zip_code: "95124",
           createdAt: new Date(),
           updatedAt: new Date(),

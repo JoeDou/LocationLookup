@@ -12,15 +12,17 @@ const inputComponents = ["address_line_one", "city", "state", "zip_code"];
 
 const addressComponents = ["street", "city", "state", "zip_code"];
 
-export function combineAddressComponent(parsedData) {
+// combine input components to create an address string
+export const combineInputComponent = (parsedData) => {
   const list = [];
   inputComponents.forEach((key) => {
     list.push(parsedData[key]);
   });
   return list.join(", ").toLowerCase();
-}
+};
 
-export function combineStreetComponent(parsedData) {
+// combined parsed street data to create an street string
+export const combineStreetComponent = (parsedData) => {
   const list = [];
   streetComponents.forEach((key) => {
     if (parsedData[key]) {
@@ -28,19 +30,24 @@ export function combineStreetComponent(parsedData) {
     }
   });
   return list.join(" ").toLowerCase();
-}
+};
 
-export function isMatch(obj1, obj2) {
+// check the two object to make sure that the values match, Google
+// does fuzzy matching so its important to make sure that input and
+// results from google map matches
+export const isMatch = (obj1, obj2) => {
   return addressComponents.reduce(
     (cum, key) =>
       cum &&
-      obj1[key] &&
-      obj2[key] &&
+      Boolean(obj1[key]) &&
+      Boolean(obj2[key]) &&
       obj1[key].toLowerCase().replace(/[\W_]+/g, " ") ===
-        obj2[key].toLowerCase().replace(/[\W_]+/g, " ")
+        obj2[key].toLowerCase().replace(/[\W_]+/g, " "),
+    true
   );
-}
+};
 
+// ErrorHandler class for customized error data
 export class ErrorHandler extends Error {
   constructor(statusCode, message) {
     super();
@@ -49,6 +56,7 @@ export class ErrorHandler extends Error {
   }
 }
 
+// streamline error output message to clients
 export const handleError = (err, res) => {
   const { statusCode, message } = err;
   res.status(statusCode).json({
@@ -58,6 +66,7 @@ export const handleError = (err, res) => {
   });
 };
 
+// wrapper function to work with async functions
 export function wrapAsync(fn) {
   return function (req, res, next) {
     fn(req, res, next).catch(next);

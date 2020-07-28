@@ -2,17 +2,22 @@ import parser from "parse-address";
 import { Address, CityStateZip } from "../models";
 import {
   combineStreetComponent,
-  combineAddressComponent,
+  combineInputComponent,
   isMatch,
   ErrorHandler,
 } from "./utils";
 
+// AddressHandler Class is the controller that handles the
+// verification and write to DB
 export default class AddressHandler {
   constructor(mapService) {
     this.mapService = mapService;
     this.verifyAndCreateAll = this.verifyAndCreateAll.bind(this);
   }
 
+  // the route handler entry, will map each address to be handle
+  // individually. Once all the promise resolves will then return
+  // the response
   async verifyAndCreateAll(req, res, next) {
     const addresses = req.body;
     const output = await Promise.all(
@@ -29,6 +34,8 @@ export default class AddressHandler {
     res.json(output);
   }
 
+  // Verify and create individual address.  Will start by looking at db and
+  // if there is not match will followup with mapService verification
   async _verifyAndCreateOne(input) {
     let output = await this._dbVerification(input);
     if (!output) {
@@ -37,10 +44,17 @@ export default class AddressHandler {
     return Promise.resolve(output);
   }
 
+  // Logic for db verification.  This verification process is a strict match,
+  // there a lot of edge cases, but it makes more sense for to google api to
+  // resolve those edge cases.
   async _dbVerification(input) {
     try {
       const cityStateZip = await CityStateZip.findOne({
-        where: { zip_code: input.zip_code, city: input.city },
+        where: {
+          zip_code: input.zip_code,
+          city: input.city,
+          state: input.state,
+        },
       });
       if (cityStateZip) {
         const address = await Address.findOne({
@@ -51,9 +65,7 @@ export default class AddressHandler {
         });
         if (address) {
           const combined = this._combineModelsToObject(address, cityStateZip);
-          if (isMatch(input, combined)) {
-            return Promise.resolve(this._formatOutput(combined));
-          }
+          return Promise.resolve(this._formatOutput(combined));
         }
       }
     } catch (e) {
@@ -63,6 +75,10 @@ export default class AddressHandler {
     return Promise.resolve(null);
   }
 
+  // Logic for verification use google map service and if create entires in DB
+  // if the address is validated.  NOTE: _createEntries is not part of the
+  // main async process because the response does not require all the data to finish
+  // writing to DB, all it need to know is if the address is valid or not
   async _mapSericeVerifyAndCreate(input) {
     const serviceAddressData = await this.mapService.addressLookup(input);
     if (isMatch(input, serviceAddressData)) {
@@ -72,6 +88,7 @@ export default class AddressHandler {
     return Promise.resolve(null);
   }
 
+  // logic to create entires in Address table and CityStateZip table
   async _createEntries(serviceAddressData) {
     try {
       let cityStateZip = await CityStateZip.findOne({
@@ -96,11 +113,12 @@ export default class AddressHandler {
     } catch (e) {}
   }
 
+  // serialize the input data into a format expected by internal functions
   _serializeInput(input) {
-    const combinedAddress = combineAddressComponent(input);
-    const parsedData = parser.parseLocation(combinedAddress);
+    const combinedInput = combineInputComponent(input);
+    const parsedData = parser.parseLocation(combinedInput);
     return {
-      address: combinedAddress,
+      address: combinedInput,
       street: combineStreetComponent(parsedData),
       city: parsedData.city,
       state: parsedData.state,
@@ -108,6 +126,8 @@ export default class AddressHandler {
     };
   }
 
+  // combine Models and save data into object to be easily consumed by
+  // internal functions
   _combineModelsToObject(address, cityStateZip) {
     return {
       street: address.street,
@@ -119,6 +139,7 @@ export default class AddressHandler {
     };
   }
 
+  // format output data to meet requirement
   _formatOutput(addressData) {
     return {
       address_line_one: addressData.street,

@@ -2,17 +2,20 @@ import { Client } from "@googlemaps/google-maps-services-js";
 import parser from "parse-address";
 import { combineStreetComponent, ErrorHandler } from "./utils";
 
-const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+// Google API KEY
+const API_KEY = process.env.GOOGLE_MAPS_API_KEY || "api_key";
 
-class MapServices {
-  constructor() {
-    this.client = this.client || new Client({});
+export default class MapServices {
+  constructor(client) {
+    this.client = client || new Client({});
   }
 
+  // only public API to lookup an address
   addressLookup(addressObj) {
     return this._request(addressObj.address);
   }
 
+  // formulate request logic for google maps geocode api
   async _request(address) {
     try {
       const geocodeData = await this.client.geocode({
@@ -28,6 +31,8 @@ class MapServices {
     }
   }
 
+  // - map google output to an internal format
+  // - parser from parse-address lib is used to normalize all address data
   _googleMapper(geocodeData) {
     const parsedData = parser.parseLocation(
       geocodeData.data.results[0].formatted_address.toLowerCase()
@@ -42,5 +47,3 @@ class MapServices {
     };
   }
 }
-
-module.exports = new MapServices();
