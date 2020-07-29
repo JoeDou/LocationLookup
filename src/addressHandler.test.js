@@ -1,43 +1,17 @@
 import "babel-polyfill";
 import AddressHandler from "./addressHandler";
+import { Address, CityStateZip } from "../models";
+import clean from "../test/clean";
+import addressFactory from "../test/factories/address";
+import cityStateZipFactory from "../test/factories/cityStateZip";
 
-let mockAFindOne;
-let mockACreate;
-let mockCSZFindOne;
-let mockCSZCreate;
-
-jest.mock("../models", () => {
-  const mockAddressFindOne = jest.fn();
-  const mockAddressCreate = jest.fn();
-  const mockCityStateZipFindOne = jest
-    .fn()
-    .mockImplementation(() => Promise.resolve());
-  const mockCityStateZipCreate = jest
-    .fn()
-    .mockImplementation(() => Promise.resolve({ id: 1 }));
-  mockCSZFindOne = mockCityStateZipFindOne;
-  mockCSZCreate = mockCityStateZipCreate;
-  mockAFindOne = mockAddressFindOne;
-  mockACreate = mockAddressCreate;
-  return {
-    Address: {
-      findOne: mockAddressFindOne,
-      create: mockAddressCreate,
-    },
-    CityStateZip: {
-      findOne: mockCityStateZipFindOne,
-      create: mockCityStateZipCreate,
-    },
-  };
-});
-
-const address = {
+const mockAddress = {
   street: "1 test st",
   lat: 1,
   lon: 2,
 };
 
-const cityStateZip = {
+const mockCityStateZip = {
   city: "san jose",
   state: "ca",
   zip_code: "12345",
@@ -64,21 +38,48 @@ const formattedOutput = {
 describe("addressHandler", () => {
   describe("AddressHandler Class", () => {
     let addressHandler;
-    beforeEach(() => {
+    beforeEach(async () => {
       addressHandler = new AddressHandler({});
+      await clean();
     });
 
     describe("_dbVerification", () => {
-      test("should call CityZip findOne", () => {
-        addressHandler._dbVerification(addressData);
-        const output = {
-          where: {
-            zip_code: addressData.zip_code,
-            city: addressData.city,
-            state: addressData.state,
-          },
-        };
-        expect(mockCSZFindOne).toHaveBeenCalledWith(output);
+      test("should return null if there are no match", async () => {
+        const out = await addressHandler._dbVerification(addressData);
+        expect(out).toBe(null);
+      });
+
+      test("should return null if only match cityStateZip", async () => {
+        const preCount = await CityStateZip.count();
+        await cityStateZipFactory({
+          city: addressData.city,
+          state: addressData.state,
+          zip_code: addressData.zip_code,
+        });
+        const postCount = await CityStateZip.count();
+        const out = await addressHandler._dbVerification(addressData);
+        expect(preCount).toBe(0);
+        expect(postCount).toBe(1);
+        expect(out).toBe(null);
+      });
+
+      test("should call _combineModelsToObject and _formatOutput if match cityStateZip and address", async () => {
+        const csz = await cityStateZipFactory({
+          city: addressData.city,
+          state: addressData.state,
+          zip_code: addressData.zip_code,
+        });
+        await addressFactory({
+          street: addressData.street,
+          cityStateZipId: csz.id,
+        });
+        const mockCombine = jest.fn();
+        const mockFormat = jest.fn();
+        addressHandler._combineModelsToObject = mockCombine;
+        addressHandler._formatOutput = mockFormat;
+        await addressHandler._dbVerification(addressData);
+        expect(mockCombine).toHaveBeenCalledTimes(1);
+        expect(mockFormat).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -91,40 +92,46 @@ describe("addressHandler", () => {
           addressLookup: mockAddressLookup,
         };
         addressHandler = new AddressHandler(mockMapService);
+        addressHandler._createEntries = jest.fn();
         addressHandler._mapSericeVerifyAndCreate(addressData);
         expect(mockAddressLookup).toHaveBeenCalledWith(addressData);
       });
     });
 
     describe("_createEntries", () => {
-      test("should call CityStateZip findOne", () => {
-        addressHandler._createEntries(addressData);
-        const output = {
+      test("should create CityStateZip and Address if doesn't exist", async () => {
+        await addressHandler._createEntries(addressData);
+        const address1 = await Address.findOne({
           where: {
-            zip_code: addressData.zip_code,
-            city: addressData.city,
+            street: addressData.street,
           },
-        };
-        expect(mockCSZFindOne).toHaveBeenCalledWith(output);
+        });
+        const addressCount = await Address.count();
+        const cityStateZip1 = await CityStateZip.findOne({
+          where: {
+            city: addressData.city,
+            zip_code: addressData.zip_code,
+          },
+        });
+        const cityStateZipcount = await CityStateZip.count();
+        expect(addressCount).toBe(1);
+        expect(address1.lat).toBe(addressData.lat);
+        expect(address1.lon).toBe(addressData.lon);
+        expect(cityStateZipcount).toBe(1);
+        expect(cityStateZip1.state).toBe(cityStateZip1.state);
       });
-      test("should call CityStateZip create", () => {
-        addressHandler._createEntries(addressData);
-        const output = {
-          zip_code: addressData.zip_code,
-          state: addressData.state,
-          city: addressData.city,
-        };
-        expect(mockCSZCreate).toHaveBeenCalledWith(output);
-      });
-      test("should call CityStateZip create", () => {
-        addressHandler._createEntries(addressData);
-        const output = {
-          street: addressData.street,
-          cityStateZipId: 1,
-          lat: addressData.lat,
-          lon: addressData.lon,
-        };
-        expect(mockACreate).toHaveBeenCalledWith(output);
+      test("should not create CityStateZip if exists", async () => {
+        await cityStateZipFactory({
+          city: "san jose",
+          state: "ca",
+          zip_code: "12345",
+        });
+        const preCount = await CityStateZip.count();
+        await addressHandler._createEntries(addressData);
+        const postCount = await CityStateZip.count();
+
+        expect(preCount).toBe(1);
+        expect(postCount).toBe(1);
       });
     });
 
@@ -150,7 +157,7 @@ describe("addressHandler", () => {
     describe("_combineModelsToObject", () => {
       test("should combine address and cityStateZip models in to one addres object", () => {
         expect(
-          addressHandler._combineModelsToObject(address, cityStateZip)
+          addressHandler._combineModelsToObject(mockAddress, mockCityStateZip)
         ).toEqual(addressData);
       });
     });

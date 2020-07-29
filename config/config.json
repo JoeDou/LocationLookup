@@ -5,7 +5,8 @@
   },
   "test": {
     "database": "location_service_test",
-    "dialect": "postgres"
+    "dialect": "postgres",
+    "logging": false
   },
   "production": {
     "use_env_variable": "DATABASE_URL",
