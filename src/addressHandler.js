@@ -19,6 +19,9 @@ export default class AddressHandler {
   // individually. Once all the promise resolves will then return
   // the response
   async verifyAndCreateAll(req, res, next) {
+    if (Object.keys(req.body).length === 0) {
+      throw new ErrorHandler(400, "Bad Request: Missing Body");
+    }
     const addresses = req.body;
 
     const output = await Promise.all(
@@ -83,6 +86,7 @@ export default class AddressHandler {
   async _mapSericeVerifyAndCreate(input) {
     const serviceAddressData = await this.mapService.addressLookup(input);
     if (isMatch(input, serviceAddressData)) {
+      // this is fired off on it's own, not required for complete to validate addresses
       this._createEntries(serviceAddressData);
       return Promise.resolve(this._formatOutput(serviceAddressData));
     }

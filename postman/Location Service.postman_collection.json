@@ -1,0 +1,122 @@
+{
+	"info": {
+		"_postman_id": "6ae1ce91-b8a1-46b7-a7c9-d8727b24c888",
+		"name": "Location Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Good Post with some falsy address",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"address_line_one\": \"525 W Santa Clara St\", \n    \"city\": \"San Jose\", \n    \"state\": \"CA\",\n    \"zip_code\": \"95113\"\n}, {\n\t\"address_line_one\": \"11 Alderton Ln\", \n    \"city\": \"Mt Laurel Township\", \n    \"state\": \"NJ\",\n    \"zip_code\": \"08054\"\n}, {\n\t\"address_line_one\": \"11 Alderton Ln\", \n    \"city\": \"Mt Laurel\", \n    \"state\": \"NJ\",\n    \"zip_code\": \"08054\"\n}, {\n\t\"address_line_one\": \"1111 false address st\", \n    \"city\": \"somewhere nowhere\", \n    \"state\": \"CA\",\n    \"zip_code\": \"11111\"\n}]"
+				},
+				"url": {
+					"raw": "localhost:3001/address/verify",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"address",
+						"verify"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "404 error",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:3001/",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "400 Missing Param",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"address_line_one\": \"525 W Santa Clara St\", \n    \"city\": \"San Jose\", \n    \"state\": \"CA\"\n}]"
+				},
+				"url": {
+					"raw": "localhost:3001/address/verify?Content-Type=application/json",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"address",
+						"verify"
+					],
+					"query": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "400 Missing Body",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[{\n    \"address_line_one\": \"525 W Santa Clara St\", \n    \"city\": \"San Jose\", \n    \"state\": \"CA\",\n    \"zip_code\": \"95113\"\n}]"
+				},
+				"url": {
+					"raw": "localhost:3001/address/verify",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"address",
+						"verify"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
