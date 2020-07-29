@@ -1,4 +1,10 @@
 # Address Verification
+
+- NodeJS
+- Express
+- Postgres
+- Google Map Geocode API
+
 #### How to install
 ```npm install```
 
